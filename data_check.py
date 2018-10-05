@@ -20,22 +20,25 @@ dataframe = pandas.read_csv('icecream_sales_2003_2012.csv',
 
 dataset = dataframe.values
 dataset = dataset.astype('float32')
-# print(dataset.head())
 # print(dataset)
-
-# normalize the dataset
+# print("====================")
+# print("====================")
 # データセットを正規化します。scikit learnの関数を使ってやってしまいます
 scaler = MinMaxScaler(feature_range=(0, 1))
 dataset = scaler.fit_transform(dataset)
+# print(dataset)
+# print("====================")
+# print("====================")
 
-# split into train and test sets
 # これは訓練用のデータtpテスト用のデータを分けているだけ。2/3と1/3にします。
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
 train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]
-#print(len(train), len(test))
-
-# ↑ 79 40 になる
+# print(train)
+# print("====================")
+# print(test)
+# print("====================")
+# print("====================")
 
 # これが少し面倒臭いデータの変換になります
 
@@ -49,6 +52,11 @@ def create_dataset(dataset, look_back=1):
             xset.append(a)
         dataY.append(dataset[i + look_back, 0])
         dataX.append(xset)
+    # print(dataX)
+    # print("====================")
+    # print(dataY)
+    # print("====================")
+    # print("====================")
     return numpy.array(dataX), numpy.array(dataY)
 
 
@@ -56,61 +64,37 @@ def create_dataset(dataset, look_back=1):
 look_back = 12
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
-print(testX.shape)
-print(testX[0])
-print(testY)
+
+# こんなデータがあったら
+# A     B     C     D
+# 100   200   300   400
+# 101   201   301   401
+# ~
+# 111   211   311   411
+# 112   212   312   412
+# 113   213   313   413
+# 112の値を、111,211,311,411以下4*12（look_back）のデータを使って予想します
+# そんな感じのデータを作ります
 
 # reshape input to be [samples, time steps(number of variables), features] *convert time series into column
+# また変換かよ。普通にちゃんと並んだ多次元配列に変換します
 trainX = numpy.reshape(
     trainX, (trainX.shape[0], trainX.shape[1], trainX.shape[2]))
 testX = numpy.reshape(testX, (testX.shape[0], testX.shape[1], testX.shape[2]))
-
-
-# create and fit the LSTM network
-# やっとネットワークの作成です
-model = Sequential()
-# input_shapeのパラメーター：変数数、ウィンドウの大きさ
-model.add(LSTM(4, input_shape=(testX.shape[1], look_back)))
-model.add(Dense(1))
-model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=1000, batch_size=1, verbose=2)
-
-# make predictions
-trainPredict = model.predict(trainX)
-testPredict = model.predict(testX)
-pad_col = numpy.zeros(dataset.shape[1]-1)
-
-# invert predictions
-
-
-def pad_array(val):
-    return numpy.array([numpy.insert(pad_col, 0, x) for x in val])
-
-
-trainPredict = scaler.inverse_transform(pad_array(trainPredict))
-trainY = scaler.inverse_transform(pad_array(trainY))
-testPredict = scaler.inverse_transform(pad_array(testPredict))
-testY = scaler.inverse_transform(pad_array(testY))
-
-# calculate root mean squared error
-trainScore = math.sqrt(mean_squared_error(trainY[:, 0], trainPredict[:, 0]))
-print('Train Score: %.2f RMSE' % (trainScore))
-testScore = math.sqrt(mean_squared_error(testY[:, 0], testPredict[:, 0]))
-print('Test Score: %.2f RMSE' % (testScore))
-
-print(testY[:, 0])
-print(testPredict[:, 0])
-# shift train predictions for plotting
-trainPredictPlot = numpy.empty_like(dataset)
-trainPredictPlot[:, :] = numpy.nan
-trainPredictPlot[look_back:len(trainPredict)+look_back, :] = trainPredict
-# shift test predictions for plotting
-testPredictPlot = numpy.empty_like(dataset)
-testPredictPlot[:, :] = numpy.nan
-testPredictPlot[len(trainPredict)+(look_back*2) +
-                1:len(dataset)-1, :] = testPredict
-# plot baseline and predictions
-plt.plot(scaler.inverse_transform(dataset))
-plt.plot(trainPredictPlot)
-plt.plot(testPredictPlot)
-plt.show()
+print(trainX.shape[0])
+print(trainX.shape[1])
+print(trainX.shape[2])
+print(testX.shape[0])
+print(testX.shape[1])
+print(testX.shape[2])
+print("====================")
+print("====================")
+print("====================")
+print(trainX)
+print("====================")
+print(testX)
+print("====================")
+print("====================")
+print(trainX[0])
+print("====================")
+print(testX[0])
